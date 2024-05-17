@@ -20,7 +20,7 @@ const sharpenKernel = [
 ]; 
 
 var vmapSize = 18.144;
-var mapSize = 17.28;
+var mapSize = 14.336;
 var tileSize = 1.92;
 
 var grid = loadSettings();
@@ -454,6 +454,8 @@ function saveSettings() {
 
     grid.levelCorrection = scope.levelCorrection;
 
+    grid.mapResolution = scope.mapResolution;
+
     localStorage.setItem('grid', JSON.stringify(grid));
 }
 
@@ -604,7 +606,7 @@ function calcMinMaxHeight(map) {
 }
 
 function updateInfopanel() {
-    let rhs = 17.28 / mapSize * 100;
+    let rhs = 14.336 / mapSize * 100;
      
     document.getElementById('rHeightscale').innerHTML = rhs.toFixed(1);
     document.getElementById('lng').innerHTML = grid.lng.toFixed(5);
@@ -860,41 +862,146 @@ async function getOSMData() {
 
 
 async function getMapImage() {
+
+    // Get the value of the map resolution from the dropdown list
+    let mapResolutionDropdown = document.getElementById("mapResolution");
+    let splits = mapResolutionDropdown.value;
+
+    let imageWidth = 1280;
+    let imageHeight = 1280;
+
+    let progressDiv = document.getElementById('progressDiv');
+    progressDiv.style.display = 'block';
+
+    // Get the bounds of the current map view  
     let bounds = getExtent(grid.lng, grid.lat, mapSize);
     let minLng = Math.min(bounds.topleft[0], bounds.bottomright[0]);
     let minLat = Math.min(bounds.topleft[1], bounds.bottomright[1]);
     let maxLng = Math.max(bounds.topleft[0], bounds.bottomright[0]);
     let maxLat = Math.max(bounds.topleft[1], bounds.bottomright[1]);
 
+    // Divide the difference between the minimum maximum coordinates by the "splits" number
+    let lngDiff = maxLng - minLng;
+    let latDiff = maxLat - minLat;
+
+    // Calculate the Longitude and Latitude increments
+    let lngIncrement = lngDiff / splits;
+    let latIncrement = latDiff / splits;
+    let lng1;
+    let lng2;
+    let lat1;
+    let lat2;
+
     let styleName = map.getStyle().metadata['mapbox:origin'];
     if (!(styleName)) {
         styleName = 'satellite-v9';
     }
 
-    let url = 'https://api.mapbox.com/styles/v1/mapbox/'
-        + styleName + '/static/['
-        + minLng + ','
-        + minLat + ','
-        + maxLng + ','
-        + maxLat + ']/1280x1280@2x?access_token='
-        + mapboxgl.accessToken;
+    let imageCount = 0;
+    let loadedImages = 0;
+    let totalImageCount = splits * splits;
 
-    try {
-        const response = await fetch(url);
-        if (response.ok) {
-            let png = await response.blob();
-            download('map.png', png);
-            console.log(bounds.topleft[0], bounds.topleft[1], bounds.bottomright[0], bounds.bottomright[1]);
-        } else {
-            throw new Error('download map error:', response.status);
+    // To stich the downloaded MapBox images together at the edges to generate a large image, we will use a canvas.
+    let canvas = document.createElement('canvas');
+    let mergedImage = document.getElementById('mergedImage');
+    
+    // Display the canvas in the merged image element
+    mergedImage.src = canvas.toDataURL('image/png');
+    
+    let mergedImageDiv = document.getElementById('mergedImageDiv');
+    mergedImageDiv.style.display = 'block';
+    canvas.width = imageWidth * splits;
+    canvas.height = imageHeight * splits;;
+    let ctx = canvas.getContext('2d');
+    
+    lng1 = minLng;
+    for (let lng = 0; lng < splits; lng ++) {
+
+        lat1 = minLat;
+        for (let lat = 0; lat < splits; lat ++) {
+
+            progressDiv.innerText = 'Downloading tile ' + imageCount + ' of ' + splits * splits + '...';
+
+            lng2 = lng1 + lngIncrement;
+            lat2 = lat1 + latIncrement;
+
+            let url = 'https://api.mapbox.com/styles/v1/mapbox/'
+                + styleName + '/static/['
+                + lng1 + ','
+                + lat1 + ','
+                + lng2 + ','
+                + lat2 + ']/1280x1280?access_token='
+                + mapboxgl.accessToken;
+
+            try {
+                const response = await fetch(url);
+                if (response.ok) {
+                    let png = await response.blob();
+                    // download(`map_${lng}-${lat}.png`, png);
+
+                    // Create an image element with the downloaded image
+                    let img = new Image();
+                    img.src = URL.createObjectURL(png);
+
+                    img.onload = function() {
+                        progressDiv.innerText = 'Inserting tile ' + loadedImages + ' of ' + totalImageCount + '...';
+                
+                        // Releases the existing object URL toavoid memory leaks
+                        URL.revokeObjectURL(img.src)
+        
+                        // Draw the image on the canvas
+                        ctx.drawImage(img, imageWidth * lng, imageHeight * (splits -lat - 1));
+        
+                        // Clean up the image element
+                        img = null;
+  
+                        // Display the canvas in the merged image element
+                        mergedImage.src = canvas.toDataURL('image/png');
+        
+                        loadedImages++;
+                        if (loadedImages === totalImageCount) {
+                            // Download the stiched image
+                            let mapFileName = `${styleName}-map-${canvas.width}x${canvas.height}.png`;
+                            let pngUrl = canvas.toDataURL('image/png').replace('image/png', 'image/octet-stream');
+                            progressDiv.innerText = 'Saving the map ' + mapFileName + '...';
+                            download(mapFileName, null, pngUrl);
+
+                            // Display the canvas in the merged image element
+                            mergedImage.src = canvas.toDataURL('image/png');
+                            alert(`Map has been saved as ${mapFileName}`);
+
+                            // Hide the progress div and the merged image div
+                            progressDiv.innerText = '';
+                            progressDiv.style.display = 'none';
+                            mergedImageDiv.style.display = 'none';
+        
+                        }
+                    }
+
+                } else {
+                    alert(response.status);
+                    throw new Error('download map error:', response.status);
+                }
+            } catch (e) {
+                console.log(e.message);
+                alert(e.message);
+            }
+
+            // Increment the top border
+            lat1 = lat1 + latIncrement
+            imageCount++;
+
         }
-    } catch (e) {
-        console.log(e.message);
+
+        // Increment the left border
+        lng1 = lng1 + lngIncrement;
+  
     }
+
 }
 
 function autoSettings(withMap = true) {
-    scope.mapSize = 17.28;
+    scope.mapSize = 14.336;
     scope.waterDepth = defaultWaterdepth;
 
     mapSize = scope.mapSize / 1;

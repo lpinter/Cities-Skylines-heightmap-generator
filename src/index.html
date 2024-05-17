@@ -61,7 +61,14 @@
         </ul>
     </div>
 
-    <div class="fill wrapper">
+
+    <div class="fill wrapper" >
+
+        <div id="progressDiv" class="progressDiv" ></div>
+        <div id="mergedImageDiv" class="mergedImageDiv" >
+            <img id="mergedImage" alt="merged image" />
+        </div>
+
         <div id="map" class="content"></div>
         <canvas id="wMap-canvas" width="400" height="400" ></canvas> <!-- for debug -->
 
@@ -81,10 +88,28 @@
                 <div class="settings">
                     <header><h4>Size and scale</h4><hr></header>
                     <dl>
+                        <dt>Map resolution:</dt>
+                        <dd class="wsSlp wideSelect">
+                            <select id="mapResolution">
+                                <option value="1">1280 x 1280</option>
+                                <option value="2">2560 x 2560</option>
+                                <option value="3">3840 x 3840</option>
+                                <option value="4">5120 x 5120</option>
+                                <option value="5">6400 x 6400</option>
+                                <option value="6">7680 x 7680</option>
+                                <option value="7">8960 x 8960</option>
+                                <option value="8">10,240 x 10,240</option>
+                                <option value="9">11,520 x 11,520</option>
+                                <option value="10">12,800 x 12,800</option>
+                                <option value="11">14,080 x 14,080</option>
+                                <option value="12" selected="selected">15,360 x 15,360</option>
+                            </select><i class="fas fa-chevron-down"></i>
+                        </dd>
+                        <dd>&nbsp;</dd>
                         <dt>Map size:</dt>
-                            <dd><input type="range" data-model="mapSize" min="17.28" max="69.12" step="0.01" id="mapSize"
+                            <dd><input type="range" data-model="mapSize" min="14.336" max="69.12" step="0.01" id="mapSize"
                                 onkeyup="changeMapsize(this)" onmouseup="changeMapsize(this)"></dd>
-                            <dd><input type="number" data-model="mapSize" min="17.28" max="69.12" step="0.01"
+                            <dd><input type="number" data-model="mapSize" min="14.336" max="69.12" step="0.01"
                                 onkeyup="changeMapsize(this)" onmouseup="changeMapsize(this)"></dd>
                             <dd><abbr>km</abbr></dd>
                         <dt>Base level:</dt>
@@ -222,6 +247,7 @@
     <script src='tiles.js'></script>
     <script src="binding.js"></script> <!-- needs to be loaded before app, for scope var-->
     <script src="app.js"></script>
+
 </body>
 
 </html>
