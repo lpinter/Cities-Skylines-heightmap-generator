@@ -783,7 +783,7 @@ progress::-ms-fill {
     display: none;
 }
 
-.mergedImageDiv {
+.canvasDiv {
     position: absolute;
     top: 25px;
     z-index: 10;

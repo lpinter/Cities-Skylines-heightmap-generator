@@ -902,18 +902,16 @@ async function getMapImage() {
     let totalImageCount = splits * splits;
 
     // To stich the downloaded MapBox images together at the edges to generate a large image, we will use a canvas.
-    let canvas = document.createElement('canvas');
-    let mergedImage = document.getElementById('mergedImage');
     
-    // Display the canvas in the merged image element
-    mergedImage.src = canvas.toDataURL('image/png');
-    
-    let mergedImageDiv = document.getElementById('mergedImageDiv');
-    mergedImageDiv.style.display = 'block';
+    let canvas = document.getElementById('canvas');
     canvas.width = imageWidth * splits;
     canvas.height = imageHeight * splits;;
     let ctx = canvas.getContext('2d');
-    
+
+    // Display the canvas in the div
+    let canvasDiv = document.getElementById('canvasDiv');
+    // canvasDiv.style.display = 'block';
+
     lng1 = minLng;
     for (let lng = 0; lng < splits; lng ++) {
 
@@ -954,10 +952,7 @@ async function getMapImage() {
         
                         // Clean up the image element
                         img = null;
-  
-                        // Display the canvas in the merged image element
-                        mergedImage.src = canvas.toDataURL('image/png');
-        
+          
                         loadedImages++;
                         if (loadedImages === totalImageCount) {
                             // Download the stiched image
@@ -966,14 +961,12 @@ async function getMapImage() {
                             progressDiv.innerText = 'Saving the map ' + mapFileName + '...';
                             download(mapFileName, null, pngUrl);
 
-                            // Display the canvas in the merged image element
-                            mergedImage.src = canvas.toDataURL('image/png');
                             alert(`Map has been saved as ${mapFileName}`);
 
                             // Hide the progress div and the merged image div
                             progressDiv.innerText = '';
                             progressDiv.style.display = 'none';
-                            mergedImageDiv.style.display = 'none';
+                            canvasDiv.style.display = 'none';
         
                         }
                     }
