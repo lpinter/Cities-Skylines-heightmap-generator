@@ -901,17 +901,39 @@ async function getMapImage() {
     let loadedImages = 0;
     let totalImageCount = splits * splits;
 
-    // To stich the downloaded MapBox images together at the edges to generate a large image, we will use a canvas.
-    
+    // To stich the downloaded MapBox images together at the edges to generate a large image, we will use canvases.
+    // Create a canvas for the stiched image  
     let canvas = document.getElementById('canvas');
     canvas.width = imageWidth * splits;
     canvas.height = imageHeight * splits;;
     let ctx = canvas.getContext('2d');
 
+    // Create a canvas for the left half of the image
+    let canvasLeft = document.getElementById('canvasLeft');
+    canvasLeft.width = imageWidth * (splits / 2);
+    canvasLeft.height =  imageHeight * splits ;
+    let ctxLeft = canvasLeft.getContext('2d');
+
+    // Create a canvas for the right half of the image
+    let canvasRight = document.getElementById('canvasRight');
+    canvasRight.width = imageWidth * (splits / 2);
+    canvasRight.height =  imageHeight * splits;
+    let ctxRight = canvasRight.getContext('2d');
+
+
     // Display the canvas in the div
     let canvasDiv = document.getElementById('canvasDiv');
     // canvasDiv.style.display = 'block';
 
+    let canvasDivLeft = document.getElementById('canvasDivLeft');
+    // canvasDivLeft.style.display = 'block';
+
+    let canvasDivRight = document.getElementById('canvasDivRight');
+    // canvasDivRight.style.display = 'block';
+
+
+    let canvasX = 0;
+    let canvasY = 0;
     lng1 = minLng;
     for (let lng = 0; lng < splits; lng ++) {
 
@@ -943,19 +965,51 @@ async function getMapImage() {
 
                     img.onload = function() {
                         progressDiv.innerText = 'Inserting tile ' + loadedImages + ' of ' + totalImageCount + '...';
-                
+                        
+                        if (lng < splits / 2) {
+                            console.log(`left canvas: ${lng} ${lat}`);
+                        // Draw the image on the left canvas
+                            canvasX = imageWidth * lng;
+                            canvasY = canvasLeft.height -  (imageHeight * (lat+1));
+                            console.log(`canvasX: ${canvasX} canvasY: ${canvasY}`);
+                            ctxLeft.drawImage(img, canvasX, canvasY);
+                        }
+                        else {
+                            console.log(`right canvas: ${lng} ${lat}`);
+                            // Draw the image on the right canvas
+                            canvasX = imageWidth * (lng - splits/2);
+                            canvasY = canvasRight.height -  (imageHeight * (lat+1));
+                            console.log(`canvasX: ${canvasX} canvasY: ${canvasY}`);
+                            ctxRight.drawImage(img, canvasX, canvasY);
+                        }
+
                         // Releases the existing object URL toavoid memory leaks
                         URL.revokeObjectURL(img.src)
-        
-                        // Draw the image on the canvas
-                        ctx.drawImage(img, imageWidth * lng, imageHeight * (splits -lat - 1));
-        
                         // Clean up the image element
                         img = null;
           
                         loadedImages++;
                         if (loadedImages === totalImageCount) {
+
+                            // alert(`Will download left`);
+                            let pngUrlLeft = canvasLeft.toDataURL('image/png').replace('image/png', 'image/octet-stream');
+                            let mapFileNameLeft = `${styleName}-left-${canvas.width}x${canvas.height}.png`;
+                            download(mapFileNameLeft, null, pngUrlLeft);
+
+                            // alert(`Will download right`);
+                            let pngUrlRight = canvasRight.toDataURL('image/png').replace('image/png', 'image/octet-stream');
+                            let mapFileNameRight = `${styleName}-right-${canvas.width}x${canvas.height}.png`;
+                            download(mapFileNameRight, null, pngUrlRight);
+
+                            // Merge the canvases
+                            // alert(`Will merge canvases`);
+                            // Draw the left canvas on the canvas
+                            ctx.drawImage(canvasLeft, 0, 0);
+                            // Draw the right canvas on the canvas
+                            ctx.drawImage(canvasRight, canvas.width / 2, 0);
+
                             // Download the stiched image
+                            // alert(`Will download map`);
                             let mapFileName = `${styleName}-map-${canvas.width}x${canvas.height}.png`;
                             let pngUrl = canvas.toDataURL('image/png').replace('image/png', 'image/octet-stream');
                             progressDiv.innerText = 'Saving the map ' + mapFileName + '...';

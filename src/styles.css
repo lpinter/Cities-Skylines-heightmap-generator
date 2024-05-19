@@ -791,3 +791,23 @@ progress::-ms-fill {
     background-color: white;
     display: none;
 }
+
+.canvasDivLeft {
+    position: absolute;
+    top: 25px;
+    left: 25px;
+    z-index: 10;
+    width: 400px;
+    background-color: white;
+    display: none;
+}
+
+.canvasDivRight {
+    position: absolute;
+    top: 25px;
+    right: 25px;
+    z-index: 10;
+    width: 400px;
+    background-color: white;
+    display: none;
+}
