@@ -48,7 +48,7 @@ let accessToken = 'pk.eyJ1IjoiYmVydGRldm4iLCJhIjoiY2t2dXF1ZGhyMHlteTJ2bzJjZzE3M2
 
 // Get the value of the MapBox token from the settings panel
 let mapBoxToken = document.getElementById('mapBoxToken').value;
-if (mapBoxToken) {
+if (mapBoxToken && mapBoxToken.trim().length > 0 ) {
     mapboxgl.accessToken = mapBoxToken;
 } else {
     mapboxgl.accessToken = accessToken;
@@ -76,9 +76,9 @@ const pbElement = document.getElementById('progress');
 try {
     document.getElementById('geocoder').appendChild(geocoder.onAdd(map));
 } catch(error) {
+    togglePanel(0)
     console.log(error);
     if (error = 'Error: Invalid token') {
-        togglePanel(0)
         alert('Please enter a valid MapBox token in the settings panel, press the TAB key, and reload the page.');
     } else {
         alert('Error: ' + error);
