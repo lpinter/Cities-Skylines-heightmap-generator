@@ -44,7 +44,17 @@ if (debug) while (debugElements.length > 0) {
 }
 
 // MapBox API token, temperate email for dev
-mapboxgl.accessToken = 'pk.eyJ1IjoiYmVydGRldm4iLCJhIjoiY2t2dXF1ZGhyMHlteTJ2bzJjZzE3M24xOCJ9.J5skknTRyh-6RoDWD4kw2w';
+let accessToken = 'pk.eyJ1IjoiYmVydGRldm4iLCJhIjoiY2t2dXF1ZGhyMHlteTJ2bzJjZzE3M24xOCJ9.J5skknTRyh-6RoDWD4kw2w';
+
+// Get the value of the MapBox token from the settings panel
+let mapBoxToken = document.getElementById('mapBoxToken').value;
+if (mapBoxToken) {
+    mapboxgl.accessToken = mapBoxToken;
+} else {
+    mapboxgl.accessToken = accessToken;
+}
+
+// console.log('mapboxgl.accessToken: ' + mapboxgl.accessToken);
 
 var map = new mapboxgl.Map({
     container: 'map',                               // Specify the container ID
@@ -63,7 +73,17 @@ var geocoder = new MapboxGeocoder({
 
 const pbElement = document.getElementById('progress');
 
-document.getElementById('geocoder').appendChild(geocoder.onAdd(map));
+try {
+    document.getElementById('geocoder').appendChild(geocoder.onAdd(map));
+} catch(error) {
+    console.log(error);
+    if (error = 'Error: Invalid token') {
+        togglePanel(0)
+        alert('Please enter a valid MapBox token in the settings panel, press the TAB key, and reload the page.');
+    } else {
+        alert('Error: ' + error);
+    }
+}
 
 map.on('load', function () {
     mapCanvas = map.getCanvasContainer();
@@ -434,6 +454,8 @@ function loadSettings() {
     document.getElementById('plainsHeight').value = parseInt(stored.plainsHeight) || 140;
     document.getElementById('streamDepth').value = parseInt(stored.streamDepth) || 140;
     document.getElementById('mapResolution').value = parseInt(stored.mapResolution) || 6;
+    document.getElementById('mapBoxToken').value = stored.mapBoxToken || '';
+    
 
     return stored;
 }
@@ -457,6 +479,9 @@ function saveSettings() {
     grid.levelCorrection = scope.levelCorrection;
 
     grid.mapResolution = scope.mapResolution;
+    grid.mapBoxToken = document.getElementById('mapBoxToken').value;
+
+    // alert('mapBoxToken: ' + grid.mapBoxToken);
 
     localStorage.setItem('grid', JSON.stringify(grid));
 }
