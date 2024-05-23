@@ -102,6 +102,7 @@ map.on('idle', function () {
     scope.waterDepth = parseInt(grid.waterDepth) || 50;
     scope.gravityCenter = parseInt(grid.gravityCenter) || 0;
     scope.levelCorrection = parseInt(grid.levelCorrection) || 0;
+    scope.mapResolution = parseInt(grid.mapResolution) || 6;
 
     saveSettings();
 });
@@ -432,6 +433,7 @@ function loadSettings() {
     document.getElementById('blurPostPasses').value = parseInt(stored.blurPostPasses) || 3;
     document.getElementById('plainsHeight').value = parseInt(stored.plainsHeight) || 140;
     document.getElementById('streamDepth').value = parseInt(stored.streamDepth) || 140;
+    document.getElementById('mapResolution').value = parseInt(stored.mapResolution) || 6;
 
     return stored;
 }
@@ -863,9 +865,10 @@ async function getOSMData() {
 
 async function getMapImage() {
 
-    // Get the value of the map resolution from the dropdown list
-    let mapResolutionDropdown = document.getElementById("mapResolution");
-    let splits = mapResolutionDropdown.value;
+    // Get the value of the map resolution from the scope
+    let splits = scope.mapResolution;
+    // Save the settings including the map resolution
+    saveSettings();
 
     let imageWidth = 1280;
     let imageHeight = 1280;
@@ -967,19 +970,19 @@ async function getMapImage() {
                         progressDiv.innerText = 'Inserting tile ' + loadedImages + ' of ' + totalImageCount + '...';
                         
                         if (lng < splits / 2) {
-                            console.log(`left canvas: ${lng} ${lat}`);
+                            // console.log(`left canvas: ${lng} ${lat}`);
                         // Draw the image on the left canvas
                             canvasX = imageWidth * lng;
                             canvasY = canvasLeft.height -  (imageHeight * (lat+1));
-                            console.log(`canvasX: ${canvasX} canvasY: ${canvasY}`);
+                            // console.log(`canvasX: ${canvasX} canvasY: ${canvasY}`);
                             ctxLeft.drawImage(img, canvasX, canvasY);
                         }
                         else {
-                            console.log(`right canvas: ${lng} ${lat}`);
+                            // console.log(`right canvas: ${lng} ${lat}`);
                             // Draw the image on the right canvas
                             canvasX = imageWidth * (lng - splits/2);
                             canvasY = canvasRight.height -  (imageHeight * (lat+1));
-                            console.log(`canvasX: ${canvasX} canvasY: ${canvasY}`);
+                            // console.log(`canvasX: ${canvasX} canvasY: ${canvasY}`);
                             ctxRight.drawImage(img, canvasX, canvasY);
                         }
 
