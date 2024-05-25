@@ -19,9 +19,12 @@ const sharpenKernel = [
     [-0.00391, -0.01563, -0.02344, -0.01563, -0.00391] 
 ]; 
 
-var vmapSize = 18.144;
+// Set the default map size to match the Cities: Skylines II scale
 var mapSize = 14.336;
-var tileSize = 1.92;
+
+// Calculate the visible map size and tile size
+var vmapSize = mapSize * 1.05;
+var tileSize = mapSize / 9;
 
 var grid = loadSettings();
 
