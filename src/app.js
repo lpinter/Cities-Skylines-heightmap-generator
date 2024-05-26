@@ -1046,11 +1046,12 @@ async function getMapImage() {
                             progressDiv.innerText = 'Saving the map ' + mapFileName + '...';
                             download(mapFileName, null, pngUrl);
 
-                            alert(`Map has been saved as ${mapFileName}`);
+                            // alert(`Map has been saved as ${mapFileName}`);
+                            progressDiv.innerText = `Map has been saved as ${mapFileName}`;
 
                             // Hide the progress div and the merged image div
-                            progressDiv.innerText = '';
-                            progressDiv.style.display = 'none';
+                            // progressDiv.innerText = '';
+                            // progressDiv.style.display = 'none';
                             canvasDiv.style.display = 'none';
         
                         }

@@ -227,7 +227,7 @@ dt {
     opacity: 0.85;
     padding: 0.75em 0.75em 1.25em 0.75em;
     position: absolute;
-    top: 0;
+    top: 30px;
     transform: translateX(-100%);
     width: 25.5em;
     overflow-y: auto;
@@ -792,7 +792,7 @@ progress::-ms-fill {
     right: auto;
     margin-left: auto;
     margin-right: auto;
-    width: 400px;
+    width: 600px;
     padding-left: 5px;
     padding-right: 5px;
     padding-top: 5px;
