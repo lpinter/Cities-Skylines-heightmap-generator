@@ -481,7 +481,7 @@ function saveSettings() {
 
     grid.levelCorrection = scope.levelCorrection;
 
-    grid.mapResolution = scope.mapResolution;
+    grid.mapResolution = document.getElementById('mapResolution').value;
     grid.mapBoxToken = document.getElementById('mapBoxToken').value;
 
     // alert('mapBoxToken: ' + grid.mapBoxToken);
