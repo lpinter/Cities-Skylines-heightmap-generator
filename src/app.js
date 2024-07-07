@@ -46,101 +46,136 @@ if (debug) while (debugElements.length > 0) {
     debugElements[0].classList.remove('debug');
 }
 
-// MapBox API token, temperate email for dev
-let accessToken = 'pk.eyJ1IjoiYmVydGRldm4iLCJhIjoiY2t2dXF1ZGhyMHlteTJ2bzJjZzE3M24xOCJ9.J5skknTRyh-6RoDWD4kw2w';
+const pbElement = document.getElementById('progress');
 
-// Get the value of the MapBox token from the settings panel
-let mapBoxToken = document.getElementById('mapBoxToken').value;
-if (mapBoxToken && mapBoxToken.trim().length > 0 ) {
-    mapboxgl.accessToken = mapBoxToken;
-} else {
-    mapboxgl.accessToken = accessToken;
-}
+// MapBox API token, temperate email for dev
+// let accessToken = 'pk.eyJ1IjoiYmVydGRldm4iLCJhIjoiY2t2dXF1ZGhyMHlteTJ2bzJjZzE3M24xOCJ9.J5skknTRyh-6RoDWD4kw2w';
+let accessToken = '';
+
+let isTokenOK = checkMapBoxToken();
 
 // console.log('mapboxgl.accessToken: ' + mapboxgl.accessToken);
 
-var map = new mapboxgl.Map({
-    container: 'map',                               // Specify the container ID
-    style: 'mapbox://styles/mapbox/outdoors-v11',   // Specify which map style to use
-    //style: 'mapbox://styles/mapbox/streets-v11',  // Specify which map style to use
-    center: [grid.lng, grid.lat],                   // Specify the starting position [lng, lat]
-    zoom: grid.zoom,                                // Specify the starting zoom
-    preserveDrawingBuffer: true
-});
+if (isTokenOK) {
+    // A MapBox token has been found
 
-var geocoder = new MapboxGeocoder({
-    accessToken: mapboxgl.accessToken,
-    mapboxgl: mapboxgl,
-    marker: false
-});
+    var map = new mapboxgl.Map({
+        container: 'map',                               // Specify the container ID
+        style: 'mapbox://styles/mapbox/outdoors-v11',   // Specify which map style to use
+        //style: 'mapbox://styles/mapbox/streets-v11',  // Specify which map style to use
+        center: [grid.lng, grid.lat],                   // Specify the starting position [lng, lat]
+        zoom: grid.zoom,                                // Specify the starting zoom
+        preserveDrawingBuffer: true
+    });
 
-const pbElement = document.getElementById('progress');
+    var geocoder = new MapboxGeocoder({
+        accessToken: mapboxgl.accessToken,
+        mapboxgl: mapboxgl,
+        marker: false
+    });
 
-try {
-    document.getElementById('geocoder').appendChild(geocoder.onAdd(map));
-} catch(error) {
-    togglePanel(0)
-    console.log(error);
-    if (error = 'Error: Invalid token') {
-        alert('Please enter a valid MapBox token in the settings panel, press the TAB key, and reload the page.');
-    } else {
-        alert('Error: ' + error);
+
+    try {
+        document.getElementById('geocoder').appendChild(geocoder.onAdd(map));
+    } catch(error) {
+        openPanel(0)
+        console.log(error);
+        if (error = 'Error: Invalid token') {
+            let mapBoxTokenMessage = document.getElementById("mapBoxTokenMessage");
+            mapBoxTokenMessage.style.display = 'block';
+            mapBoxTokenMessage.innerText = 'Please enter a valid MapBox token into the field below and click Save';
+            openPanel(0);
+        } else {
+            alert('Error: ' + error);
+        }
     }
+
+    map.on('load', function () {
+        mapCanvas = map.getCanvasContainer();
+
+        scope.mapSize = mapSize;
+        scope.baseLevel = 0;
+        scope.heightScale = 100;
+
+        caches.open('tiles').then((data) => cache = data);
+    });
+
+    map.on('style.load', function () {
+        addSource();
+        addLayer();
+        setDebug();
+
+        setMouse();
+
+        showWaterLayer();
+        showHeightLayer();
+    });
+
+    map.on('click', function (e) {
+        grid.lng = e.lngLat.lng;
+        grid.lat = e.lngLat.lat;
+
+        setGrid(grid.lng, grid.lat, vmapSize);
+        map.panTo(new mapboxgl.LngLat(grid.lng, grid.lat));
+        saveSettings();
+        hideDebugLayer();
+        updateInfopanel();
+    });
+
+    map.on('idle', function () {
+        // scope can be set if bindings.js is loaded (because of docReady) 
+        scope.waterDepth = parseInt(grid.waterDepth) || 50;
+        scope.gravityCenter = parseInt(grid.gravityCenter) || 0;
+        scope.levelCorrection = parseInt(grid.levelCorrection) || 0;
+        scope.mapResolution = parseInt(grid.mapResolution) || 6;
+
+        saveSettings();
+    });
+
+    geocoder.on('result', function (query) {
+        grid.lng = query.result.center[0];
+        grid.lat = query.result.center[1];
+
+        setGrid(grid.lng, grid.lat, vmapSize);
+        map.setZoom(10.2);
+
+        saveSettings();
+        hideDebugLayer();
+        updateInfopanel();
+    });
+
 }
 
-map.on('load', function () {
-    mapCanvas = map.getCanvasContainer();
+// Finds the MapBox token and displays a message if
+//  not found in the accessToken variable or
+//  in the mapBoxToken text box
+function checkMapBoxToken() {
 
-    scope.mapSize = mapSize;
-    scope.baseLevel = 0;
-    scope.heightScale = 100;
+    let isTokenOK = false;
 
-    caches.open('tiles').then((data) => cache = data);
-});
+    // Get the value of the MapBox token from the info panel
+    let mapBoxToken = document.getElementById('mapBoxToken').value;
+    if (mapBoxToken && mapBoxToken.trim().length > 0 ) {
+        mapboxgl.accessToken = mapBoxToken;
+    } else {
+        mapboxgl.accessToken = accessToken;
+    }
 
-map.on('style.load', function () {
-    addSource();
-    addLayer();
-    setDebug();
+    let mapBoxTokenMessage = document.getElementById("mapBoxTokenMessage");
 
-    setMouse();
+    if (mapboxgl.accessToken.trim().length == 0) {
+        let mapBoxTokenMessage = document.getElementById("mapBoxTokenMessage");
+        mapBoxTokenMessage.style.display = 'block';
+        mapBoxTokenMessage.innerText = 'Please create an access token at mapbox.com, copy it into the field below and click Save.';
+        openPanel(0);
+      } else {
+        mapBoxTokenMessage.innerText = '';
+        mapBoxTokenMessage.style.display = 'none';
+        isTokenOK = true;
+    }
 
-    showWaterLayer();
-    showHeightLayer();
-});
-
-map.on('click', function (e) {
-    grid.lng = e.lngLat.lng;
-    grid.lat = e.lngLat.lat;
-
-    setGrid(grid.lng, grid.lat, vmapSize);
-    map.panTo(new mapboxgl.LngLat(grid.lng, grid.lat));
-    saveSettings();
-    hideDebugLayer();
-    updateInfopanel();
-});
-
-map.on('idle', function () {
-    // scope can be set if bindings.js is loaded (because of docReady) 
-    scope.waterDepth = parseInt(grid.waterDepth) || 50;
-    scope.gravityCenter = parseInt(grid.gravityCenter) || 0;
-    scope.levelCorrection = parseInt(grid.levelCorrection) || 0;
-    scope.mapResolution = parseInt(grid.mapResolution) || 6;
-
-    saveSettings();
-});
-
-geocoder.on('result', function (query) {
-    grid.lng = query.result.center[0];
-    grid.lat = query.result.center[1];
-
-    setGrid(grid.lng, grid.lat, vmapSize);
-    map.setZoom(10.2);
-
-    saveSettings();
-    hideDebugLayer();
-    updateInfopanel();
-});
+    return isTokenOK;
+}
 
 function onMove(e) {
     grid.lng = e.lngLat.lng;
@@ -413,7 +448,9 @@ function setGrid(lng, lat, size) {
     map.getSource('grid').setData(getGrid(lng, lat, size));
     map.getSource('start').setData(getGrid(lng, lat, size / 9));
     map.getSource('playable').setData(getGrid(lng, lat, size / 9 * 5));
-    grid.zoom = map.getZoom();
+    if (map){
+        grid.zoom = map.getZoom();
+    }
 }
 
 function getExtent(lng, lat, size = vmapSize) {
@@ -463,9 +500,16 @@ function loadSettings() {
     return stored;
 }
 
-function saveSettings() {
-    grid.zoom = map.getZoom();
+// Save the settings and reload the page
+function saveMapBoxToken() {
+    saveSettings();
+    location.reload();
+}
 
+function saveSettings() {
+    if (map){
+        grid.zoom = map.getZoom();
+    }
     grid.drawGrid = document.getElementById('drawGrid').checked;
     grid.waterDepth = parseInt(document.getElementById('waterDepth').value);
     grid.drawStreams = document.getElementById('drawStrm').checked;
@@ -532,6 +576,19 @@ function exportToCSV(mapData) {
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
+}
+
+function openPanel(index) {
+    for (let i = 0; i < panels.length; i++) {
+        if (i == index) {
+            // Display the panel, slide in into the page
+            panels[i].setAttribute('class', 'panel slide-in');
+            icons[i].setAttribute('class', iconClass[i]);
+        } else {
+            // Hide the rest of the panels, slide them out of the page
+            panels[i].setAttribute('class', 'panel slide-out');
+        }
+    }
 }
 
 function togglePanel(index) {
@@ -636,6 +693,9 @@ function calcMinMaxHeight(map) {
 }
 
 function updateInfopanel() {
+
+    checkMapBoxToken();
+
     let rhs = 14.336 / mapSize * 100;
      
     document.getElementById('rHeightscale').innerHTML = rhs.toFixed(1);

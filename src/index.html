@@ -56,7 +56,7 @@
             <li><a onclick="zoomOut()" title="Zoom out"><i class="fas fa-search-minus"></i></a></li>
         </ul>
         <ul>
-            <li><a href="https://github.com/sysoppl/cities-heightmap" target="_blank" title="Help"><i class="far fa-question-circle"></i></a></li>
+            <li><a href="https://github.com/lpinter/Cities-Skylines-heightmap-generator" target="_blank" title="Help"><i class="far fa-question-circle"></i></a></li>
             <li><a href="#" onclick="getHeightmap(255)" title="Dwnload tiles map (Terrain-RGB)"><i class="fas fa-bug"></i></a></li>
         </ul>
     </div>
@@ -96,7 +96,13 @@
                 <div class="settings">
                     <header><h4>MapBox token</h4><hr></header>
                     <dl>
-                        <div><dd><input type="text" id="mapBoxToken" class="textInput" data-model="mapBoxToken" onChange="saveSettings()"></dd></div>
+                        <dd><div id="mapBoxTokenMessage" class="mapBoxTokenMessage"></div></dd>
+                        <dd>
+                            <div class="mapBoxTokenGroup">
+                                <div class="inline-block-child"><input type="text" id="mapBoxToken" class="mapBoxToken" data-model="mapBoxToken"/></div>
+                                <div class="inline-block-child"><button onclick="saveMapBoxToken()">Save</button></div>
+                            </div>
+                        </dd>
                     </dl>
                     <header><h4>Size and scale</h4><hr></header>
                     <dl>
